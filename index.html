@@ -1,0 +1,657 @@
+
+<html>
+  <head>
+    <title>Transit Status</title>
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="https://cdn.glitch.global/fa1cb630-2359-4939-a019-51274643365e/apple-touch-icon.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="https://cdn.glitch.global/fa1cb630-2359-4939-a019-51274643365e/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="https://cdn.glitch.global/fa1cb630-2359-4939-a019-51274643365e/favicon-16x16.png"
+    />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link
+      rel="mask-icon"
+      href="https://cdn.glitch.global/fa1cb630-2359-4939-a019-51274643365e/safari-pinned-tab.svg"
+      color="#5bbad5"
+    />
+    <meta name="msapplication-TileColor" content="#da532c" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta
+      http-equiv="Cache-Control"
+      content="no-cache, no-store, must-revalidate"
+    />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <style>
+      body {
+        font-family: "Helvetica Neue", Helvetica, Arial;
+        font-size: 14px;
+        line-height: 20px;
+        font-weight: 400;
+        color: #3b3b3b;
+        -webkit-font-smoothing: antialiased;
+        font-smoothing: antialiased;
+        background: #2b2b2b;
+      }
+      @media screen and (max-width: 580px) {
+        body {
+          font-size: 16px;
+          line-height: 22px;
+        }
+      }
+
+      .wrapper {
+        margin: 0 auto;
+        padding: 40px;
+        max-width: 800px;
+      }
+
+      .table {
+        margin: 0 0 40px 0;
+        width: 100%;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        display: table;
+      }
+      @media screen and (max-width: 580px) {
+        .table {
+          display: block;
+        }
+      }
+
+      .row {
+        display: table-row;
+        background: #f6f6f6;
+      }
+      .row:nth-of-type(odd) {
+        background: #e9e9e9;
+      }
+      .row.header {
+        font-weight: 900;
+        color: #ffffff;
+        background: #ea6153;
+      }
+      .row.green {
+        background: #27ae60;
+      }
+      .row.blue {
+        background: #2980b9;
+      }
+      .row.yellow {
+        background: #ffdd00;
+      }
+      .row.lyft {
+        background: #ff00bf;
+      }
+      @media screen and (max-width: 580px) {
+        .row {
+          padding: 14px 0 7px;
+          display: block;
+        }
+        .row.header {
+          padding: 0;
+          height: 6px;
+        }
+        .row.header .cell {
+          display: none;
+        }
+        .row .cell {
+          margin-bottom: 10px;
+        }
+        .row .cell:before {
+          margin-bottom: 3px;
+          content: attr(data-title);
+          min-width: 98px;
+          font-size: 10px;
+          line-height: 10px;
+          font-weight: bold;
+          text-transform: uppercase;
+          color: #969696;
+          display: block;
+        }
+      }
+
+      .cell {
+        padding: 6px 12px;
+        display: table-cell;
+      }
+      @media screen and (max-width: 580px) {
+        .cell {
+          padding: 2px 16px;
+          display: block;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper">
+      <div class="table" id="muni">
+        <div class="row header">
+          <div class="cell">Home MUNI Route</div>
+          <div class="cell">Stop</div>
+          <div class="cell">Next in (minutes)</div>
+        </div>
+      </div>
+
+      <div class="table" id="SFOmuni">
+        <div class="row header green">
+          <div class="cell">SFO MUNI Route</div>
+          <div class="cell">Stop</div>
+          <div class="cell">Next in (minutes)</div>
+        </div>
+      </div>
+
+      <div class="table" id="lyft">
+        <div class="row header lyft">
+          <div class="cell">Bike Station</div>
+          <div class="cell">E-bikes Available</div>
+          <div class="cell">Bikes Available</div>
+        </div>
+      </div>
+
+      <div class="table" id="enny">
+        <div class="row header yellow">
+          <div class="cell">Enny MUNI Route</div>
+          <div class="cell">Stop</div>
+          <div class="cell">Next in (minutes)</div>
+        </div>
+      </div>
+
+    <script type="text/javascript">
+      // const stopCode = "13999"; //24 - 15737, 15736 | J - 13999, 14004 | 36 - 13965
+
+      const stopCodes = [13999, 14004, 15737, 15736, 13966];
+
+      function getMuni(stopCode) {
+        var stopName;
+        var routeName;
+        var direction;
+
+        let str = "";
+
+        fetch(
+          "https://api.511.org/transit/StopMonitoring?api_key=73204193-1aa6-4d38-8005-88de7e661a46&agency=SF&format=json&stopCode=" +
+            stopCode
+        )
+          .then((res) => res.json()) // the .json() method parses the JSON response into a JS object literal
+          .then(function (data) {
+            if (
+              Array.isArray(
+                data.ServiceDelivery.StopMonitoringDelivery.MonitoredStopVisit
+              )
+            ) {
+              stopName =
+                data.ServiceDelivery.StopMonitoringDelivery
+                  .MonitoredStopVisit[0].MonitoredVehicleJourney.MonitoredCall
+                  .StopPointName;
+              routeName =
+                data.ServiceDelivery.StopMonitoringDelivery
+                  .MonitoredStopVisit[0].MonitoredVehicleJourney.LineRef;
+              direction =
+                data.ServiceDelivery.StopMonitoringDelivery
+                  .MonitoredStopVisit[0].MonitoredVehicleJourney
+                  .DestinationName;
+            } else {
+              stopName =
+                data.ServiceDelivery.StopMonitoringDelivery.MonitoredStopVisit
+                  .MonitoredVehicleJourney.MonitoredCall.StopPointName;
+              routeName =
+                data.ServiceDelivery.StopMonitoringDelivery.MonitoredStopVisit
+                  .MonitoredVehicleJourney.LineRef;
+              direction =
+                data.ServiceDelivery.StopMonitoringDelivery.MonitoredStopVisit
+                  .MonitoredVehicleJourney.DestinationName;
+            }
+
+            const para = document.createElement("div");
+            para.setAttribute("class", "row");
+            var incoming =
+              data.ServiceDelivery.StopMonitoringDelivery.MonitoredStopVisit;
+            if (
+              Array.isArray(
+                data.ServiceDelivery.StopMonitoringDelivery.MonitoredStopVisit
+              )
+            ) {
+              for (var i = 0; i < incoming.length - 1; i++) {
+                str +=
+                  convertMsToMinutesSeconds(
+                    Date.parse(
+                      incoming[i].MonitoredVehicleJourney.MonitoredCall
+                        .ExpectedArrivalTime
+                    ) - Date.now()
+                  ) + ", ";
+              }
+
+              para.innerHTML +=
+                "<div class='cell'>" +
+                routeName +
+                " " +
+                direction +
+                "</div><div class='cell'>" +
+                stopName +
+                "</div><div class='cell'>" +
+                str +
+                convertMsToMinutesSeconds(
+                  Date.parse(
+                    incoming[incoming.length - 1].MonitoredVehicleJourney
+                      .MonitoredCall.ExpectedArrivalTime
+                  ) - Date.now()
+                );
+              +"</div>";
+            } else {
+              para.innerHTML +=
+                "<div class='cell'>" +
+                routeName +
+                " " +
+                direction +
+                "</div><div class='cell'>" +
+                stopName +
+                "</div><div class='cell'>" +
+                convertMsToMinutesSeconds(
+                  Date.parse(
+                    incoming.MonitoredVehicleJourney.MonitoredCall
+                      .ExpectedArrivalTime
+                  ) - Date.now()
+                );
+              +"</div>";
+            }
+            para.innerHTML += "</div></div>";
+            document.getElementById("muni").appendChild(para);
+          });
+      }
+
+      const ennyStopCodes = [14422, 15737, 14294];
+
+      function getEnnyMuni(stopCode, line) {
+        var stopName;
+        var routeName;
+        var direction;
+
+        let str = "";
+
+        fetch(
+          "https://api.511.org/transit/StopMonitoring?api_key=73204193-1aa6-4d38-8005-88de7e661a46&agency=SF&format=json&stopCode=" +
+            stopCode
+        )
+          .then((res) => res.json()) // the .json() method parses the JSON response into a JS object literal
+          .then(function (data) {
+            if (
+              Array.isArray(
+                data.ServiceDelivery.StopMonitoringDelivery.MonitoredStopVisit
+              )
+            ) {
+              stopName =
+                data.ServiceDelivery.StopMonitoringDelivery
+                  .MonitoredStopVisit[0].MonitoredVehicleJourney.MonitoredCall
+                  .StopPointName;
+              routeName =
+                data.ServiceDelivery.StopMonitoringDelivery
+                  .MonitoredStopVisit[0].MonitoredVehicleJourney.LineRef;
+              direction =
+                data.ServiceDelivery.StopMonitoringDelivery
+                  .MonitoredStopVisit[0].MonitoredVehicleJourney
+                  .DestinationName;
+            } else {
+              stopName =
+                data.ServiceDelivery.StopMonitoringDelivery.MonitoredStopVisit
+                  .MonitoredVehicleJourney.MonitoredCall.StopPointName;
+              routeName =
+                data.ServiceDelivery.StopMonitoringDelivery.MonitoredStopVisit
+                  .MonitoredVehicleJourney.LineRef;
+              direction =
+                data.ServiceDelivery.StopMonitoringDelivery.MonitoredStopVisit
+                  .MonitoredVehicleJourney.DestinationName;
+            }
+
+            const para = document.createElement("div");
+            para.setAttribute("class", "row");
+            var incoming =
+              data.ServiceDelivery.StopMonitoringDelivery.MonitoredStopVisit;
+            if (
+              Array.isArray(
+                data.ServiceDelivery.StopMonitoringDelivery.MonitoredStopVisit
+              )
+            ) {
+              for (var i = 0; i < incoming.length - 1; i++) {
+                if (incoming[i].MonitoredVehicleJourney.LineRef === "38R") {
+                  str += "<strong>";
+                }
+                str +=
+                  convertMsToMinutesSeconds(
+                    Date.parse(
+                      incoming[i].MonitoredVehicleJourney.MonitoredCall
+                        .ExpectedArrivalTime
+                    ) - Date.now()
+                  ) + ", ";
+                if (incoming[i].MonitoredVehicleJourney.LineRef === "38R") {
+                  str += "</strong>";
+                }
+              }
+
+              if (
+                incoming[incoming.length - 1].MonitoredVehicleJourney
+                  .LineRef === "38R"
+              ) {
+                para.innerHTML +=
+                  "<div class='cell'>" +
+                  routeName +
+                  " " +
+                  direction +
+                  "</div><div class='cell'>" +
+                  stopName +
+                  "</div><div class='cell'>" +
+                  str +
+                  "<strong>" +
+                  convertMsToMinutesSeconds(
+                    Date.parse(
+                      incoming[incoming.length - 1].MonitoredVehicleJourney
+                        .MonitoredCall.ExpectedArrivalTime
+                    ) - Date.now()
+                  );
+                +"</strong></div>";
+              } else {
+                para.innerHTML +=
+                  "<div class='cell'>" +
+                  routeName +
+                  " " +
+                  direction +
+                  "</div><div class='cell'>" +
+                  stopName +
+                  "</div><div class='cell'>" +
+                  str +
+                  convertMsToMinutesSeconds(
+                    Date.parse(
+                      incoming[incoming.length - 1].MonitoredVehicleJourney
+                        .MonitoredCall.ExpectedArrivalTime
+                    ) - Date.now()
+                  );
+                +"</div>";
+              }
+            } else {
+              para.innerHTML +=
+                "<div class='cell'>" +
+                routeName +
+                " " +
+                direction +
+                "</div><div class='cell'>" +
+                stopName +
+                "</div><div class='cell'>" +
+                convertMsToMinutesSeconds(
+                  Date.parse(
+                    incoming.MonitoredVehicleJourney.MonitoredCall
+                      .ExpectedArrivalTime
+                  ) - Date.now()
+                );
+              +"</div>";
+            }
+            para.innerHTML += "</div></div>";
+            document.getElementById("enny").appendChild(para);
+          });
+      }
+      
+      const Embarcadero = [17217];
+      const Folsom = [14510];
+      const Castro24 = [14334];
+      const DonChee6 = [17833];
+
+      function getSFOMuni(stopCode) {
+        var stopName;
+        var routeName;
+        var direction;
+        var line;
+        var allRelevantStations = [];
+
+        if (stopCode == Embarcadero) line = "J";
+        if (stopCode == Folsom) line = "N";
+        if (stopCode == Castro24) line = "24";
+        if (stopCode == DonChee6) line = "6";
+
+        let str = "";
+
+        fetch(
+          "https://api.511.org/transit/StopMonitoring?api_key=73204193-1aa6-4d38-8005-88de7e661a46&agency=SF&format=json&stopCode=" +
+            stopCode
+        )
+          .then((res) => res.json()) // the .json() method parses the JSON response into a JS object literal
+          .then(function (data) {
+            if (
+              Array.isArray(
+                data.ServiceDelivery.StopMonitoringDelivery.MonitoredStopVisit
+              )
+            ) {
+              for (
+                var i = 0;
+                i <
+                data.ServiceDelivery.StopMonitoringDelivery.MonitoredStopVisit
+                  .length;
+                i++
+              ) {
+                if (
+                  data.ServiceDelivery.StopMonitoringDelivery
+                    .MonitoredStopVisit[i].MonitoredVehicleJourney.LineRef ===
+                  line
+                ) {
+                  allRelevantStations.push(
+                    data.ServiceDelivery.StopMonitoringDelivery
+                      .MonitoredStopVisit[i]
+                  );
+                  stopName =
+                    data.ServiceDelivery.StopMonitoringDelivery
+                      .MonitoredStopVisit[i].MonitoredVehicleJourney
+                      .MonitoredCall.StopPointName;
+                  routeName =
+                    data.ServiceDelivery.StopMonitoringDelivery
+                      .MonitoredStopVisit[i].MonitoredVehicleJourney.LineRef;
+                  direction =
+                    data.ServiceDelivery.StopMonitoringDelivery
+                      .MonitoredStopVisit[i].MonitoredVehicleJourney
+                      .DestinationName;
+                }
+              }
+            } else {
+              if (
+                data.ServiceDelivery.StopMonitoringDelivery.MonitoredStopVisit
+                  .MonitoredVehicleJourney.LineRef === line
+              ) {
+                stopName =
+                  data.ServiceDelivery.StopMonitoringDelivery.MonitoredStopVisit
+                    .MonitoredVehicleJourney.MonitoredCall.StopPointName;
+                routeName =
+                  data.ServiceDelivery.StopMonitoringDelivery.MonitoredStopVisit
+                    .MonitoredVehicleJourney.LineRef;
+                direction =
+                  data.ServiceDelivery.StopMonitoringDelivery.MonitoredStopVisit
+                    .MonitoredVehicleJourney.DestinationName;
+              }
+            }
+
+            const para = document.createElement("div");
+            para.setAttribute("class", "row");
+
+            for (var i = 0; i < allRelevantStations.length - 1; i++) {
+              if (stopCode == Embarcadero) {
+                str +=
+                  convertMsToMinutesSeconds(
+                    Date.parse(
+                      allRelevantStations[i].MonitoredVehicleJourney
+                        .MonitoredCall.ExpectedDepartureTime
+                    ) - Date.now()
+                  ) + ", ";
+              } else if (stopCode == DonChee6) {
+                str +=
+                  convertMsToMinutesSeconds(
+                    Date.parse(
+                      allRelevantStations[i].MonitoredVehicleJourney
+                        .MonitoredCall.AimedArrivalTime
+                    ) - Date.now()
+                  ) + ", ";
+              }      
+              else {
+                str +=
+                  convertMsToMinutesSeconds(
+                    Date.parse(
+                      allRelevantStations[i].MonitoredVehicleJourney
+                        .MonitoredCall.ExpectedArrivalTime
+                    ) - Date.now()
+                  ) + ", ";
+              }
+            }
+            if (stopCode == Embarcadero || stopCode == DonChee6) {
+              para.innerHTML +=
+                "<div class='cell'>" +
+                routeName +
+                " " +
+                direction +
+                "</div><div class='cell'>" +
+                stopName +
+                "</div><div class='cell'>" +
+                str +
+                convertMsToMinutesSeconds(
+                  Date.parse(
+                    allRelevantStations[allRelevantStations.length - 1]
+                      .MonitoredVehicleJourney.MonitoredCall
+                      .ExpectedDepartureTime
+                  ) - Date.now()
+                );
+              +"</div>";
+            } else {
+              para.innerHTML +=
+                "<div class='cell'>" +
+                routeName +
+                " " +
+                direction +
+                "</div><div class='cell'>" +
+                stopName +
+                "</div><div class='cell'>" +
+                str +
+                convertMsToMinutesSeconds(
+                  Date.parse(
+                    allRelevantStations[allRelevantStations.length - 1]
+                      .MonitoredVehicleJourney.MonitoredCall.ExpectedArrivalTime
+                  ) - Date.now()
+                );
+              +"</div>";
+            }
+
+            para.innerHTML += "</div></div>";
+            document.getElementById("SFOmuni").appendChild(para);
+          });
+      }
+
+      function roundToMinute(num) {
+        return num < 31 ? 0 : 1;
+      }
+
+      function convertMsToMinutesSeconds(milliseconds) {
+        const minutes = Math.floor(milliseconds / 60000);
+        const seconds = Math.round((milliseconds % 60000) / 1000);
+
+        return seconds === 60
+          ? `${minutes + 1}m`
+          : `${minutes + roundToMinute(seconds)}m`;
+      }
+
+      /**
+       * searches deep into an object recursively...
+       * @param {Object} obj object to be searched
+       * @param {any} searchValue the value/key to search for
+       * @param {Object} [options]
+       * @param {boolean} options.[searchKeys] whether to search object keys as well as values. Defaults to `true` if `serchValue` is a string, `false` otherwise.
+       * @param {number} options.[maxDepth=20] maximum recursion depth (to avoid "Maximum call stack size exceeded")
+       * @returns {string[]} Paths on the object to the matching results
+       */
+      const findPaths = (
+        obj,
+        searchValue,
+        { searchKeys = typeof searchValue === "string", maxDepth = 20 } = {}
+      ) => {
+        const paths = [];
+        const notObject = typeof searchValue !== "object";
+        const gvpio = (obj, maxDepth, prefix) => {
+          if (!maxDepth) return;
+
+          for (const [curr, currElem] of Object.entries(obj)) {
+            if (searchKeys && curr === searchValue) {
+              // To search for property name too ...
+              paths.push(prefix + curr);
+            }
+
+            if (typeof currElem === "object") {
+              // object is "object" and "array" is also in the eyes of "typeof"
+              // search again :D
+              gvpio(currElem, maxDepth - 1, prefix + curr + "/");
+              if (notObject) continue;
+            }
+            // it's something else... probably the value we are looking for
+            // compares with "searchValue"
+            if (currElem === searchValue) {
+              // return index AND/OR property name
+              paths.push(prefix + curr);
+            }
+          }
+        };
+        gvpio(obj, maxDepth, "");
+        return paths;
+      };
+
+      runQueries();
+      //setInterval(runQueries,30000);
+
+      function runQueries() {
+        getLyft();
+        for (var i = 0; i < stopCodes.length; i++) {
+          getMuni(stopCodes[i]);
+        }
+        for (var i = 0; i < ennyStopCodes.length; i++) {
+          getEnnyMuni(ennyStopCodes[i]);
+        }
+        getSFOMuni(Embarcadero);
+        getSFOMuni(Folsom);
+        getSFOMuni(Castro24);
+        getSFOMuni(DonChee6);
+        for (var i = 0; i < santiStopCodes.length; i++) {
+          getSantiMuni(santiStopCodes[i]);
+        }
+      }
+
+      async function getLyft() {
+        const response = await fetch(
+          "https://gbfs.lyft.com/gbfs/2.3/bay/en/station_status.json"
+        );
+        const data = await response.json();
+        const stations = [
+          "0fc2ae3f-b5ac-493b-bd93-8300b601f9db",
+          "86e91819-05c0-4150-ab16-83d8480dc7f4",
+        ];
+        const station_name = ["29th St at Church St", "29th St at Tiffany Ave"];
+        stations.forEach(function (st, idx) {
+          const path = findPaths(data, st); //finds the station we care about by ID
+          const r = /\d+/;
+          const station_path = path[0].match(r); // regex to find containing objects
+          const accessor = data.data.stations[station_path];
+          const d = document.createElement("div");
+          d.setAttribute("class", "row");
+          d.innerHTML =
+            "<div class='cell'>" +
+            station_name[idx] +
+            "</div><div class='cell'>" +
+            accessor.num_ebikes_available +
+            "</div><div class='cell'>" +
+            (accessor.num_bikes_available - accessor.num_ebikes_available) +
+            "</div>";
+          document.getElementById("lyft").appendChild(d);
+        });
+      }
+    </script>
+  </body>
+</html>
