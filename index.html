@@ -27,12 +27,7 @@
     />
     <meta name="msapplication-TileColor" content="#da532c" />
     <meta name="theme-color" content="#ffffff" />
-    <meta
-      http-equiv="Cache-Control"
-      content="no-cache, no-store, must-revalidate"
-    />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
       body {
         font-family: "Helvetica Neue", Helvetica, Arial;
@@ -619,9 +614,6 @@
         getSFOMuni(Folsom);
         getSFOMuni(Castro24);
         getSFOMuni(DonChee6);
-        for (var i = 0; i < santiStopCodes.length; i++) {
-          getSantiMuni(santiStopCodes[i]);
-        }
       }
 
       async function getLyft() {
@@ -650,6 +642,18 @@
             (accessor.num_bikes_available - accessor.num_ebikes_available) +
             "</div>";
           document.getElementById("lyft").appendChild(d);
+        });
+      }
+
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/my_muni/sw.js')
+            .then(registration => {
+              console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            })
+            .catch(err => {
+              console.log('ServiceWorker registration failed: ', err);
+            });
         });
       }
     </script>
